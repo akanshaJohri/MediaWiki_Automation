@@ -1,0 +1,16 @@
+- name: Move csv & qouta temmplate to destination
+  ansible.builtin.template:
+    src: "{{item}}"
+    dest: "/var/tmp/{{item | basename | regex_replace('\\.j2$', '') }}"
+  with_fileglob:
+    - templates/*.yaml
+
+- name: apply the created cluster configmap to enable the User defined Pods
+  shell: kubectl apply -f qouta.yaml
+
+- name: apply the created cluster configmap to enable the User defined Pods
+  shell: kubectl apply -f /var/tmp/cluster-monitoring-config.yaml 
+
+- name: Check that configmap 
+  shell: kubectl get cm -n openshift-monitoring | grep cluster-monitoring-config
+  register: cm_status
