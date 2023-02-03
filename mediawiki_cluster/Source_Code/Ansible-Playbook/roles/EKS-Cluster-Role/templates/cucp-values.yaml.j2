@@ -1,0 +1,112 @@
+global:
+  namespace: "{{ project_name }}"
+#  nodeSelector: "kubernetes.io/hostname: ip-10-0-1-150.ec2.internal"
+  nodeSelector: "Application: CUCP"
+  nwattach:
+    metadata:
+      name: ipvlan-network-cu-c-01
+  ifpod:
+    service:
+      metadata:
+        name: cp-if-service
+      spec:
+        clusterIP: "{{ clusterIP_if_svc }}"
+    deployment:
+      metadata:
+        name: cp-if-pod
+      spec:
+        replica_num: "{{ No_of_pods }}"
+        template:
+          annotations:
+            ipaddress: "172.16.30.51"
+          spec:
+            containers:
+              image: "{{ registry_path }}/{{ cucp_repo_path }}:cu-cp_if_image_a000013_mc"
+  uepod:
+    service:
+      metadata:
+        name: cp-ue-service
+      spec:
+        clusterIP: "{{ clusterIP_ue_svc}}"
+    deployment:
+      metadata:
+        name: cp-ue-pod
+      spec:
+        replica_num: "{{ No_of_pods }}"
+        template:
+          spec:
+            containers:
+              image: "{{ registry_path }}/{{ cucp_repo_path }}:cu-cp_ue_image_a000024"
+  linkpod:
+    service:
+      metadata:
+        name: cp-link-service
+      spec:
+        clusterIP: "{{ clusterIP_link_svc}}"
+    deployment:
+      metadata:
+        name: cp-link-pod
+      spec:
+        replica_num: "{{ No_of_pods }}"
+        template:
+          spec:
+            containers:
+              image: "{{ registry_path }}/{{ cucp_repo_path }}:cu-cp_link_image_a000013"
+  timerpod:
+    service:
+      metadata:
+        name: cp-timer-service
+      spec:
+        clusterIP: "{{ clusterIP_timer_svc }}"
+    deployment:
+      metadata:
+        name: cp-timer-pod
+      spec:
+        replica_num: "{{ No_of_pods }}"
+        template:
+          spec:
+            containers:
+              image: "{{ registry_path }}/{{ cucp_repo_path }}:cu-cp_timer_image_a000013"
+  linkdb:
+    StatefulSet:
+      metadata:
+        name: cp-link-db-ss
+      spec:
+        replica_num: "{{ No_of_pods }}"
+        template:
+          spec:
+            containers:
+              image: "{{ registry_path }}/{{ cucp_repo_path }}:cu_db_image_a000003"
+    Service:
+      metadata:
+        name: cp-link-db-service
+  timerdb:
+    StatefulSet:
+      metadata:
+        name: cp-timer-db-ss
+      spec:
+        replica_num: "{{ No_of_pods }}"
+        template:
+          spec:
+            containers:
+              image: "{{ registry_path }}/{{ cucp_repo_path }}:cu_db_image_a000003"
+    Service:
+      metadata:
+        name: cp-timer-db-service
+  uedb:
+    StatefulSet:
+      metadata:
+        name: cp-ue-db-ss
+      spec:
+        replica_num: "{{ No_of_pods }}"
+        template:
+          spec:
+            containers:
+              image: "{{ registry_path }}/{{ cucp_repo_path }}:cu_db_image_a000003"
+    Service:
+      metadata:
+        name: cp-ue-db-service
+    ConfigMap:
+      metadata:
+        name: redis-cluster-conf-cu-cp
+

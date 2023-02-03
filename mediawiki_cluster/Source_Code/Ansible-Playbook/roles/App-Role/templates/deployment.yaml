@@ -1,0 +1,23 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: httpd-deployment-mediawiki
+  namespace: httpd-namespace-mediawiki
+  labels:
+    app: httpd_app_mediawiki
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: httpd_app_mediawiki
+  template:
+    metadata:
+      labels:
+        app: httpd_app_mediawiki
+    spec:
+      containers:
+        - name: httpd-container-mediawiki
+          image: httpd:latest
+          ports:
+            - containerPort: 80

@@ -1,0 +1,101 @@
+---
+# Tasks file for EKS-Cluster-Role
+
+- name: Configure kubectl to communicate with EKS cluster
+  shell: |
+    aws sts get-caller-identity
+    aws eks update-kubeconfig --region "{{ region_name }}" --name "{{ cluster_name }}"
+
+- name: Get the service details of EKS cluster
+  shell: kubectl get svc
+  register: output
+
+- name: Print the service details of EKS cluster
+  debug: 
+    msg: "{{ output.stdout_lines }}"
+
+- name: Copy multus, istio & helm chart for application deployment
+  command: aws s3 cp "{{ aws_s3_bucket }}/{{ aws_s3_folder }}" "{{ downloaded_software_path }}" --recursive
+
+- name: List  namespace in EKS cluster
+  shell: kubectl get namespace | grep -i "{{ project_name }}"|cut -d " " -f1
+  register: namespace_output
+
+- name: Create namespace if doesn't exist
+  command: kubectl create ns "{{ project_name }}"
+  when: "'{{ project_name }}' != namespace_output.stdout"
+
+- name: Copy pem file on bastion host
+  copy:
+    src: "{{ pem_file_path }}"
+    dest: "{{ downloaded_software_path }}"
+    mode: '400'
+
+- name: Execute script to create ECR connectivity from worker node
+  shell: ssh -i  {{ pem_file_path }}  {{user_name }}@{{ item[0] }} -o "StrictHostKeyChecking no" 'aws ecr get-login-password --region  {{ region_name }} | docker login --username {{ username }} --password-stdin  {{ registry_path }}'
+  loop:
+    - "{{ list_of_worker_node_ip }}"
+
+- name: Install multus on EKS cluster
+  shell: |
+    kubectl apply -f "{{ downloaded_software_path }}/multus/aws-k8s-multus.yaml"
+    kubectl apply -f "{{ downloaded_software_path }}/multus/networkAttachementDefinition.yaml" -n "{{ project_name }}"
+
+- name: Change permission of istioctl
+  file:
+    path: "{{ istioctl_path }}"
+    mode: '0755'
+
+- name: Install istio on EKS cluster
+  shell: |
+    export PATH="export PATH=$PWD/bin:$PATH"
+    "{{ istioctl_path }}" install --set hub={{ registry_path }}/{{ istio_repo_path }} --set profile={{ profile_name }}  -y
+    kubectl label --overwrite namespace "{{ project_name }}" istio-injection=enabled
+  args:
+    chdir: "{{ downloaded_software_path }}"
+
+- name: Copy Pod Security Policy to bastion node
+  copy:
+    src: psp.yaml
+    dest: "{{ downloaded_software_path }}/psp.yaml"
+    mode: '0644'
+
+- name: Configure Pod security policy on EKS cluster
+  command:  kubectl apply -f "{{ downloaded_software_path }}/psp.yaml"
+
+- name: Copy values.yaml on bastion node for cucp deployment
+  template:
+    src: cucp-values.yaml.j2
+    dest: "{{ downloaded_software_path }}/cu-cp_helm_a000024/values.yaml"
+    mode: '0644'
+
+- name: Check application deployment on EKS cluster
+  shell: "{{ helm_path }} list -n {{ project_name }} 2> /dev/null |grep -w {{ application_name }}|awk '{ print $1 }'"
+  register: helm_output
+
+- name: Print helm output
+  debug:
+    msg: "{{ helm_output.stdout_lines }}"
+
+- name: Application deployment on EKS cluster
+  command: "{{ helm_path }} install {{ application_name }}  {{ downloaded_software_path }}/{{ helm_conf }}/ -n {{ project_name }}"
+  when: "'{{ application_name }}' != helm_output.stdout"
+
+- name: Wait for all application pods to up and running 
+  wait_for:
+    timeout: "{{ timeout_in_sec }}"
+
+- name: List all objects created in "{{ project_name }}" namespace
+  command: kubectl get all -n "{{ project_name }}"
+  register:  Application_output 
+
+- name: Print all kubernetes objects created in "{{ project_name }}" namespace
+  debug:
+    msg: "{{ Application_output.stdout_lines }}"
+    
+- name: Remove unwanted files from bastion node
+  file:
+    path: "{{ downloaded_software_path}}/{{ item }}"
+    state: absent
+  loop:
+    "{{ files }}"

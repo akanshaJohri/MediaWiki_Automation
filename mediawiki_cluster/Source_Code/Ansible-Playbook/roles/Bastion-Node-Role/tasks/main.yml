@@ -1,0 +1,61 @@
+---
+# Tasks file to configure & install software on  bastion node
+
+- name: Install awscli on Bastion node
+  yum:
+    name: awscli
+    state: latest
+
+- name: Configure AWS on Bastion node.
+  command: aws configure set {{ item.key }} {{ item.value }}
+  with_dict:
+    aws_access_key_id: "{{ aws_access_key }}"
+    aws_secret_access_key: "{{ aws_secret_key }}"
+    region: "{{ aws_region }}"
+    format: "{{ aws_format }}"
+
+- name: Copy helm, kubectl & eksctl from S3 bucket to remote machine
+  command: aws s3 cp "{{ aws_s3_bucket }}/{{ aws_s3_folder }}" "{{ downloaded_software_path }}" --recursive
+
+- name: change permission of helm
+  unarchive:
+    src: "{{ downloaded_software_path }}/helm-v3.8.0-linux-amd64.tar.gz"
+    dest: "{{ extracted_software_path }}"
+    remote_src: yes
+
+- name: Configure helm on Bastion node
+  command: mv {{ extracted_software_path }}/linux-amd64/helm /usr/local/bin/helm
+
+- name: Change permission of eksctl
+  file:
+    path: "{{ downloaded_software_path }}/eksctl"
+    mode: u=rwx
+
+- name: Configure eksctl on Bastion Node
+  command: mv {{ downloaded_software_path }}/eksctl /usr/local/bin/
+
+- name: Change permission of kubectl
+  file:
+    path: "{{ downloaded_software_path }}/kubectl"
+    mode: u=rwx
+
+- name: Configure kubectl on Bastion Node
+  command: mv {{ downloaded_software_path }}/kubectl /usr/bin/
+
+- name: Install Docker on Bastion node
+  yum:
+    name: docker
+    state: latest
+
+- name: Start & enable the docker service
+  service:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Remove unwanted files from bastion node
+  file:
+    path: "{{ downloaded_software_path}}/{{ item }}"
+    state: absent
+  loop:
+    "{{ files }}"

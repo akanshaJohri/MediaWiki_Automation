@@ -1,0 +1,9 @@
+- name: Playbook to customize Bastion node
+  hosts: [bastionnode]
+  gather_facts: yes
+  become: true
+
+  tasks:
+    - name: Import role for Bastion node
+      import_role:
+        name: Bastion-Node-Role

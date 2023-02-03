@@ -1,0 +1,73 @@
+---
+# Tasks file for Apache-Role
+
+- name: Configure kubectl to communicate with EKS cluster
+  shell: |
+    aws sts get-caller-identity
+    aws eks update-kubeconfig --region "{{ region_name }}" --name "{{ cluster_name }}"
+
+- name: Check Cluster Node is in ready state . If not fail it
+  shell: kubectl get nodes | grep -v "Ready" | wc -l
+  register: status
+  failed_when: status.rc != 0 and status.stdout > "1"
+  
+
+- name: Get the service details of EKS cluster
+  shell: kubectl get svc
+  register: output
+
+- name: Print the service details of EKS cluster
+  debug: 
+    msg: "{{ output.stdout_lines }}"
+
+- name: List  namespace in EKS cluster
+  shell: kubectl get namespace | grep -i "{{ project_name }}"|cut -d " " -f1
+  register: namespace_output
+
+- name: Create namespace if doesn't exist
+  command: kubectl create ns "{{ project_name }}"
+  when: "'{{ project_name }}' != namespace_output.stdout"
+
+- name: Copy pem file on bastion host
+  copy:
+    src: "{{ pem_file_path }}"
+    dest: "{{ downloaded_software_path }}"
+    mode: '400'
+
+---
+
+  ## -----------------------------------------------------------------##
+  ## Apply template for DB installation
+  ##  -> Failed:: nothing
+  ## -----------------------------------------------------------------##
+
+- name: Configuring DB
+  template: {{ item }}
+    src: 
+    dest: "{{ db.install_path }}/"
+    mode: 0644
+  with_items:
+    - mariadb-deployment.yaml
+    - mariadb-svc.yaml
+
+- name: Apply Configuration
+  shell: kubectl create  -f mariadb-deployment.yaml -f mariadb-svc.yaml
+
+- name: Wait for all application pods to up and running 
+  wait_for:
+    timeout: "{{ timeout_in_sec }}"
+
+- name: List all objects created in "{{ project_name }}" namespace
+  command: kubectl get all -n "{{ project_name }}"
+  register:  Application_output 
+
+- name: Print all kubernetes objects created in "{{ project_name }}" namespace
+  debug:
+    msg: "{{ Application_output.stdout_lines }}"
+    
+- name: Remove unwanted files from bastion node
+  file:
+    path: "{{ downloaded_software_path}}/{{ item }}"
+    state: absent
+  loop:
+    "{{ files }}"

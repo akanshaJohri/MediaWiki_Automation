@@ -1,0 +1,57 @@
+  ##In this file end user can update the value of variable as per the use cases.
+
+---
+# Name of AWS region & EKS Cluster
+region_name: us-east-1
+cluster_name: Auto-EKS-ORAN
+
+#Replace below AWS S3 bucket, folder & registry path as per environmet
+aws_s3_bucket: s3://oran-neci-s3-bucket
+aws_s3_folder: eks_cluster_config/
+registry_path: 882984832338.dkr.ecr.us-east-1.amazonaws.com
+
+#Path of mediawiki sw
+mediawiki_path: /tmp/mediawiki-1.39.1
+
+
+#Replace Application name if required
+application_name: mediawiki
+
+#Name of helm chart & nameespace
+helm_conf: cu-cp_helm_a000024
+project_name: gnb00000001--cu-c
+
+#Image path for CUCP Application
+cucp_repo_path: docker/mediawiki
+
+#pem file location
+pem_file_path: /tmp/Bastion_host_keypair_NECI_NOI_PC_Team.pem
+
+#Replace username as per environment
+user_name: ec2-user
+
+#Set timeout value as per requirement
+timeout_in_sec: 120
+
+#Set number replicas as per requirement
+No_of_pods: 1
+
+#Replace Worker node IP
+list_of_worker_node_ip:
+  - 20.0.2.210
+
+#Username for login to AWS ECR
+username: AWS
+
+#Replace below IP for CUCP application(to be used in values.yam)  as per your VPC setup
+clusterIP_if_svc: 10.100.1.11
+clusterIP_ue_svc: 10.100.1.12
+clusterIP_link_svc: 10.100.1.13
+clusterIP_timer_svc: 10.100.1.14
+
+#Path of helm Utility
+helm_path: /usr/local/bin/helm
+
+#Below files needs to be deleted
+files:
+  - mediawiki-1.39.1 

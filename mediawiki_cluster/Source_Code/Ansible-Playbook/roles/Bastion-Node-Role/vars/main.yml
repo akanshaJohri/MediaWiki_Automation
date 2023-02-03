@@ -1,0 +1,20 @@
+##In this file end user can update the value of variable as per the use cases.
+
+---
+
+#AWS S3 bucket and folder  path
+aws_s3_bucket: s3://oran-neci-s3-bucket
+aws_s3_folder: Bastion_node_software/
+
+#Files to be deleted
+files:
+  - helm-v3.8.0-linux-amd64.tar.gz
+  - linux-amd64
+
+#Replace AWS credential as per environment to configure awscli
+aws_access_key: ****************JK7L
+aws_secret_key: ********************************7CeA
+aws_region: us-east-1
+aws_format: table
+
+

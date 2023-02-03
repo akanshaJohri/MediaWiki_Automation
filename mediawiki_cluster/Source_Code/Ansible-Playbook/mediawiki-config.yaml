@@ -1,0 +1,13 @@
+- name: Playbook to setuo Mediawiki App
+  hosts: [bastionnode]
+  gather_facts: yes
+  become: true
+
+  tasks:
+    - name: Import role for mediawiki
+      include_role:
+        name: DB-Role
+
+    - name: Import role for mediawiki
+      include_role:
+        name: App-Role

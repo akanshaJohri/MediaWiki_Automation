@@ -1,0 +1,6 @@
+##In this file end user can update the value of variable as per the use cases.
+---
+
+#Replace path where software will be downloaded
+downloaded_software_path: /tmp
+

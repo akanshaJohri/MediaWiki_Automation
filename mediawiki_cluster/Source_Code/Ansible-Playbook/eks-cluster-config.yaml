@@ -1,0 +1,9 @@
+- name: Playbook to customize EKS cluster & do Application deployment
+  hosts: [bastionnode]
+  gather_facts: yes
+  become: true
+
+  tasks:
+    - name: Import role for eks cluster
+      import_role:
+        name: EKS-Cluster-Role
