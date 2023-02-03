@@ -4,10 +4,14 @@
   become: true
 
   tasks:
-    - name: Import role for mediawiki
+    - name: Include role for mediawiki DB
       include_role:
         name: DB-Role
 
-    - name: Import role for mediawiki
+    - name: Include role for mediawiki App
       include_role:
         name: App-Role
+
+    - name: Include role for mediawiki Pods Qouta
+      include_role:
+        name: QoutaLimit
