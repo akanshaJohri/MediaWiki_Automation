@@ -1,12 +1,15 @@
 - name: Move csv & qouta temmplate to destination
   ansible.builtin.template:
     src: "{{item}}"
-    dest: "/var/tmp/{{item | basename | regex_replace('\\.j2$', '') }}"
+    dest: "/var/tmp/{{item }}"
   with_fileglob:
-    - templates/*.yaml
+    - templates/*
 
 - name: apply the qouta limit 
   shell: kubectl apply -f qouta.yaml
+  
+- name: apply the deployment file to spawn pods
+  shell: kubectl apply -f deployment.yaml
 
 - name: apply the created cluster configmap to enable use of csv file for running pods
-  shell: kubectl apply -f configmap.yaml
+  shell: kubectl create configmap csv-fetcher.yaml --from-file=test.csv
