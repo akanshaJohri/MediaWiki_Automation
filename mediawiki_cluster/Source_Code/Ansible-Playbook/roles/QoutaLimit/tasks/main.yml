@@ -5,12 +5,8 @@
   with_fileglob:
     - templates/*.yaml
 
-- name: apply the created cluster configmap to enable the User defined Pods
+- name: apply the qouta limit 
   shell: kubectl apply -f qouta.yaml
 
-- name: apply the created cluster configmap to enable the User defined Pods
-  shell: kubectl apply -f /var/tmp/cluster-monitoring-config.yaml 
-
-- name: Check that configmap 
-  shell: kubectl get cm -n openshift-monitoring | grep cluster-monitoring-config
-  register: cm_status
+- name: apply the created cluster configmap to enable use of csv file for running pods
+  shell: kubectl apply -f configmap.yaml
